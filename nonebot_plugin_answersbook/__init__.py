@@ -48,10 +48,7 @@ async def answersbook(state: T_State,
 @look_answer.got('question', prompt=Message.template('{user_id:at}你想问什么问题呢？'))
 async def anwsersbook(state: T_State, event: MessageEvent) -> None:
     answer: str = get_answer()
-    if 'reply' in state:
-        reply: int = state['reply'].message_id
-    else:
-        reply = event.message_id
+    reply = state['reply'].message_id if 'reply' in state else event.message_id
     await look_answer.finish(Message([MessageSegment.reply(reply),
                                       MessageSegment.at(event.user_id),
                                       MessageSegment.at(event.user_id),
