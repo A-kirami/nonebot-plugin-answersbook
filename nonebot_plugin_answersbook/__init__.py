@@ -1,14 +1,14 @@
 ﻿import random
 from pathlib import Path
 
-from nonebot import get_driver, on_command
+from nonebot import get_driver, on_keyword
 from nonebot.adapters.onebot.v11 import Message, MessageEvent, MessageSegment
-from nonebot.params import CommandArg
+from nonebot.params import EventPlainText
 from nonebot.plugin import PluginMetadata
+from nonebot.rule import Rule
 from nonebot.typing import T_State
 
-
-default_start: str = list(get_driver().config.command_start)[0]
+default_start: str = tuple(get_driver().config.command_start)[0]
 __plugin_meta__ = PluginMetadata(
     name='答案之书',
     description='这是一本治愈系的心灵解惑书，它将带给你的不止是生活的指引，还有心灵的慰藉。',
@@ -17,34 +17,39 @@ __plugin_meta__ = PluginMetadata(
         f'· <回复一条消息> 翻看答案  # 翻看这个问题的答案\n'
     )
 )
-answers_path: Path = Path(__file__).parent / "answersbook.txt"
-answers: list[str] = answers_path.read_text("utf-8").splitlines()
+answers_path: Path = Path(__file__).parent / 'answersbook.txt'
+answers: list[str] = answers_path.read_text('utf-8').splitlines()
 
 
-def get_answers() -> str:
+def get_answer() -> str:
     return random.choice(answers)
 
 
-look_answer = on_command("翻看答案")
+@Rule
+def startswith_or_endswith(message: str = EventPlainText()) -> bool:
+    return message.startswith('翻看答案') or message.endswith('翻看答案')
+
+
+look_answer = on_keyword({'翻看答案'}, rule=startswith_or_endswith)
 
 
 @look_answer.handle()
 async def answersbook(state: T_State,
                       event: MessageEvent,
-                      command_arg: Message = CommandArg()) -> None:
+                      message: str = EventPlainText()) -> None:
     state['user_id'] = event.user_id
-    if event.original_message[0].type == 'reply':
-        state['reply'] = event.original_message[0].data['id']
+    if event.reply is not None:
+        state['reply'] = event.reply
         state['question'] = True
-    if command_arg.extract_plain_text():
+    elif message.replace('翻看答案', '').replace(' ', ''):
         state['question'] = True
 
 
 @look_answer.got('question', prompt=Message.template('{user_id:at}你想问什么问题呢？'))
 async def anwsersbook(state: T_State, event: MessageEvent) -> None:
-    answer: str = get_answers()
+    answer: str = get_answer()
     if 'reply' in state:
-        reply: int = state['reply']
+        reply: int = state['reply'].message_id
     else:
         reply = event.message_id
     await look_answer.finish(Message([MessageSegment.reply(reply),
