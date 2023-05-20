@@ -14,8 +14,8 @@ __plugin_meta__ = PluginMetadata(
     usage=("· 翻看答案 <问题>  # 翻看这个问题的答案\n· <回复一条消息> 翻看答案  # 翻看这个问题的答案\n"),
 )
 
-answers_path: Path = Path(__file__).parent / "answersbook.txt"
-answers: list[str] = answers_path.read_text("utf-8").splitlines()
+answers_path = Path(__file__).parent / "answersbook.txt"
+answers = answers_path.read_text("utf-8").splitlines()
 
 
 def startswith_or_endswith(msg: str) -> Callable[[str], bool]:
